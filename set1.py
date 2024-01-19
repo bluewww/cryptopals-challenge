@@ -3,6 +3,7 @@
 
 import base64
 import string
+import itertools
 from collections import Counter
 
 # Challenge 1
@@ -92,6 +93,13 @@ def best_plaintext(plaintexts):
     return min_dist, min_dist_idx
 
 
+def best_xor_key(ciphertext):
+    keyspace = [x.to_bytes(1, 'big') for x in range(256)]
+    candidates = [bxor(ciphertext, key * len(ciphertext))
+                  for key in keyspace]
+    return best_plaintext(candidates)
+
+
 print('Challenge 3')
 plaintexts = [bxor(secret, key * len(secret)) for key in ascii_letter_bytes]
 dist, idx = best_plaintext(plaintexts)
@@ -168,8 +176,16 @@ def hamming_dist(ba1, ba2):
 
 
 def keysize_heuristic(ba, low, high):
-    key_sizes = map(lambda n: (n, hamming_dist(ba[:n], ba[n:2 * n]) / n),
-                    range(low, high))
+
+    def weight(n):
+        groups = [(ba[i:i+n], ba[i+n:i+2*n]) for i in range(0, len(ba)-n, n)]
+        dist = 0
+        for x, y in groups:
+            # normalize by keysize and number of samples
+            dist += (hamming_dist(x, y) / n / len(groups))
+        return n, dist
+
+    key_sizes = map(weight, range(low, high))
 
     def sortkey(n):
         index, dist = n
@@ -180,16 +196,21 @@ def keysize_heuristic(ba, low, high):
 
 def transpose_text(text, size):
     chunks = [text[i:i+size] for i in range(0, len(text), size)]
-    return [bytearray(l) for l in zip(*chunks)]
-
+    return [bytearray(x) for x in itertools.zip_longest(*chunks, fillvalue=0)]
 
 
 with open('6.txt', 'rb') as f:
     base64_ciphertext = bytearray([c for line in f for c in line.strip()])
     ciphertext = base64.b64decode(base64_ciphertext)
     print('Challenge 6')
-    print('ciphertext =', ciphertext)
     keysizes = keysize_heuristic(ciphertext, 2, 40)
     best_keysize = keysizes[0][0]
-    print('guessed keysize =', keysizes)
-    print('tranpose=', transpose_text(ciphertext, best_keysize))
+    print('best keysize =', best_keysize)
+    key = []
+    for text in transpose_text(ciphertext, best_keysize):
+        dist, single_key = best_xor_key(text)
+        key.append(single_key)
+    key = bytearray(key)
+    print('key =', key)
+    plaintext = bxor(ciphertext, key * ceildiv(len(ciphertext), best_keysize))
+    print('plaintext =', plaintext)
