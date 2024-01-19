@@ -69,7 +69,7 @@ def total_variation_dist(dist1, dist2):
 def char_distribution(plaintext):
     counter = Counter()
     for char in plaintext:
-        counter[char.to_bytes(1)] += 1
+        counter[char.to_bytes(1, 'big')] += 1
     total = sum(counter.values(), 0.0)
     for c in counter:
         counter[c] /= total
