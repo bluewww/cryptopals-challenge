@@ -3,6 +3,7 @@
 
 import base64
 import string
+import itertools
 from collections import Counter
 
 # Challenge 1
@@ -90,6 +91,13 @@ def best_plaintext(plaintexts):
             min_dist_idx = i
 
     return min_dist, min_dist_idx
+
+
+def best_xor_key(ciphertext):
+    keyspace = [x.to_bytes(1, 'big') for x in range(256)]
+    candidates = [bxor(ciphertext, key * len(ciphertext))
+                  for key in keyspace]
+    return best_plaintext(candidates)
 
 
 print('Challenge 3')
@@ -180,8 +188,7 @@ def keysize_heuristic(ba, low, high):
 
 def transpose_text(text, size):
     chunks = [text[i:i+size] for i in range(0, len(text), size)]
-    return [bytearray(l) for l in zip(*chunks)]
-
+    return [bytearray(l) for l in itertools.zip_longest(*chunks, fillvalue=0)]
 
 
 with open('6.txt', 'rb') as f:
@@ -192,4 +199,8 @@ with open('6.txt', 'rb') as f:
     keysizes = keysize_heuristic(ciphertext, 2, 40)
     best_keysize = keysizes[0][0]
     print('guessed keysize =', keysizes)
-    print('tranpose=', transpose_text(ciphertext, best_keysize))
+    print('best keysize =', best_keysize)
+    print('transpose =', transpose_text(ciphertext, best_keysize))
+    for text in transpose_text(ciphertext, best_keysize):
+        dist, key = best_xor_key(text)
+        print(chr(key))
