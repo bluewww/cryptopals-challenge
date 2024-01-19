@@ -134,3 +134,20 @@ with open('4.txt', 'r') as f:
 print('Challenge4')
 index, variation = best_plaintexts_sorted(candidates)[0]
 print(variation, candidates[index])
+
+# Challenge 5
+# Implement repeating-key XOR
+
+plaintext = b"""Burning 'em, if you ain't quick and nimble
+I go crazy when I hear a cymbal"""
+key = b'ICE'
+
+
+def ceildiv(a, b):
+    return ((a - 1) // b) + 1
+
+
+print('Challenge 5')
+ciphertext = bxor(plaintext, key * ceildiv(len(plaintext), 3))
+print(ciphertext.hex())
+
