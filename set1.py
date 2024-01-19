@@ -151,3 +151,45 @@ print('Challenge 5')
 ciphertext = bxor(plaintext, key * ceildiv(len(plaintext), 3))
 print(ciphertext.hex())
 
+
+# Challenge 6
+# Break repeating-key XOR
+keysize = 2
+
+
+def hamming_dist(ba1, ba2):
+    dist = 0
+    for b1, b2 in zip(ba1, ba2):
+        d = b1 ^ b2
+        while d:
+            dist += 1
+            d &= d - 1
+    return dist
+
+
+def keysize_heuristic(ba, low, high):
+    key_sizes = map(lambda n: (n, hamming_dist(ba[:n], ba[n:2 * n]) / n),
+                    range(low, high))
+
+    def sortkey(n):
+        index, dist = n
+        return dist
+
+    return sorted(key_sizes, key=sortkey)
+
+
+def transpose_text(text, size):
+    chunks = [text[i:i+size] for i in range(0, len(text), size)]
+    return [bytearray(l) for l in zip(*chunks)]
+
+
+
+with open('6.txt', 'rb') as f:
+    base64_ciphertext = bytearray([c for line in f for c in line.strip()])
+    ciphertext = base64.b64decode(base64_ciphertext)
+    print('Challenge 6')
+    print('ciphertext =', ciphertext)
+    keysizes = keysize_heuristic(ciphertext, 2, 40)
+    best_keysize = keysizes[0][0]
+    print('guessed keysize =', keysizes)
+    print('tranpose=', transpose_text(ciphertext, best_keysize))
