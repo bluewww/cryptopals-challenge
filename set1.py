@@ -2,9 +2,10 @@
 # Robert Balas <balasr@iis.ee.ethz.ch>
 
 import base64
+import itertools
 import string
 from collections import Counter
-import itertools
+
 from Crypto.Cipher import AES
 
 # Challenge 1
