@@ -8,6 +8,6 @@ demonstrate attacks on real-world crypto.
 
 Simply call
 
-	python3 set1.py
+	python3 cryptic/set1.py
 
 
