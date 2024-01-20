@@ -3,8 +3,9 @@
 
 import base64
 import string
-import itertools
 from collections import Counter
+import itertools
+from Crypto.Cipher import AES
 
 # Challenge 1
 # Convert hex to base64
@@ -214,3 +215,46 @@ with open('6.txt', 'rb') as f:
     print('key =', key)
     plaintext = bxor(ciphertext, key * ceildiv(len(ciphertext), best_keysize))
     print('plaintext =', plaintext)
+
+
+# Challenge 7
+# AES in ECB mode
+with open('7.txt', 'rb') as f:
+    ciphertext = base64.b64decode(
+        bytearray([c for line in f for c in line.strip()]))
+    aes_key = b'YELLOW SUBMARINE'
+    cipher = AES.new(aes_key, AES.MODE_ECB)
+    plaintext = cipher.decrypt(ciphertext)
+    print('Challenge 7')
+    print(plaintext)
+
+
+# Challenge 8
+# Detect AES in ECB mode
+
+def ecb_score(ba, blocksize):
+    blocks = [ba[i:i+blocksize] for i in range(0, len(ba), blocksize)]
+
+    duplicates = Counter()
+    for b in blocks:
+        duplicates[b] += 1
+
+    score = 0
+    for k, v in duplicates.items():
+        if v > 1:
+            score += 1
+    return score / len(blocks)
+
+
+# Our idea is to count the number of repeating 16-byte blocks. The more it
+# happens the worse the score.
+with open('8.txt', 'r') as f:
+    ciphertexts = list(map(bytes.fromhex, f.readlines()))
+    scores = sorted(map(lambda x: (x[0], ecb_score(x[1], 16)),
+                        enumerate(ciphertexts)),
+                    key=lambda x: x[1],
+                    reverse=True)
+    best_idx, best_score = scores[0]
+    print('Challenge 8')
+    print('score =', best_score)
+    print('ciphertext =', ciphertexts[best_idx])
