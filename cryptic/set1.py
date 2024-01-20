@@ -133,7 +133,7 @@ def best_plaintexts_sorted(plaintexts):
 
 
 candidates = []
-with open('4.txt', 'r') as f:
+with open('data/4.txt', 'r') as f:
     keyspace = [x.to_bytes(1, 'big') for x in range(256)]
     for line in f:
         ciphertext = bytes.fromhex(line.strip())
@@ -201,7 +201,7 @@ def transpose_text(text, size):
     return [bytearray(x) for x in itertools.zip_longest(*chunks, fillvalue=0)]
 
 
-with open('6.txt', 'rb') as f:
+with open('data/6.txt', 'rb') as f:
     base64_ciphertext = bytearray([c for line in f for c in line.strip()])
     ciphertext = base64.b64decode(base64_ciphertext)
     print('Challenge 6')
@@ -220,7 +220,7 @@ with open('6.txt', 'rb') as f:
 
 # Challenge 7
 # AES in ECB mode
-with open('7.txt', 'rb') as f:
+with open('data/7.txt', 'rb') as f:
     ciphertext = base64.b64decode(
         bytearray([c for line in f for c in line.strip()]))
     aes_key = b'YELLOW SUBMARINE'
@@ -249,7 +249,7 @@ def ecb_score(ba, blocksize):
 
 # Our idea is to count the number of repeating 16-byte blocks. The more it
 # happens the worse the score.
-with open('8.txt', 'r') as f:
+with open('data/8.txt', 'r') as f:
     ciphertexts = list(map(bytes.fromhex, f.readlines()))
     scores = sorted(map(lambda x: (x[0], ecb_score(x[1], 16)),
                         enumerate(ciphertexts)),
