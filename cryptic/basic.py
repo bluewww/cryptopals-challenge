@@ -4,6 +4,8 @@ import itertools
 import string
 from collections import Counter
 
+from Crypto.Cipher import AES
+
 __all__ = ['ascii_letter_bytes', 'en_char_distribution']
 
 ascii_letter_bytes = [char.encode('utf-8') for char in string.ascii_letters]
@@ -126,3 +128,49 @@ def transpose_text(text, size):
 
 def ceildiv(a, b):
     return ((a - 1) // b) + 1
+
+
+def aes_ecb_decrypt(text, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    return cipher.decrypt(text)
+
+
+def aes_ecb_encrypt(text, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    return cipher.encrypt(text)
+
+
+def aes_cbc_encrypt(text, key, iv):
+    prev = iv
+    enc = bytearray([])
+    for block in (text[i:i+16] for i in range(0, len(text), 16)):
+        enc_ecb_block = aes_ecb_encrypt(bxor(block, prev), key)
+        enc.extend(enc_ecb_block)
+        prev = enc_ecb_block
+    return enc
+
+
+def aes_cbc_decrypt(text, key, iv):
+    prev = iv
+    dec = bytearray([])
+    for block in (text[i:i+16] for i in range(0, len(text), 16)):
+        dec_ecb_block = aes_ecb_decrypt(block, key)
+        dec.extend(bxor(dec_ecb_block, prev))
+        prev = block
+    return dec
+
+
+def aes_detect_ecb_block_mode(oracle):
+    test = 48 * b'X'
+    enc = oracle(bytearray(test))
+    for offset in range(16):
+        seen = set()
+        for block in (enc[offset+i:offset+i+16]
+                      for i in range(0, len(enc)-16, 16)):
+            # we have seen this encrypted block before so it is very likely to
+            # be ECB
+            if str(block) in seen:
+                return True
+            seen.add(str(block))
+
+    return False
