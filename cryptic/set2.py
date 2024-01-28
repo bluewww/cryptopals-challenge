@@ -15,7 +15,10 @@ from basic import (aes_cbc_decrypt, aes_cbc_encrypt, aes_detect_ecb_block_mode,
 
 def pad_with_pkcs7(ba, align):
     diff = -len(ba) % align
-    ba.extend(diff.to_bytes(1, 'big') * diff)
+    if diff:
+        ba.extend(diff.to_bytes(1, 'big') * diff)
+    else:
+        ba.extend(align.to_bytes(1, 'big') * align)
     return ba
 
 
@@ -175,3 +178,25 @@ print('Challenge 14')
 dec, blocksize = aes_ecb_pad_attack(aes_ecb_oracle_harder)
 print('blocksize =', blocksize)
 print('dec =', dec)
+
+
+# Challenge 15
+# PKCS#7 padding validation
+
+def strip_padding(text, align):
+    if len(text) % align != 0:
+        raise Exception('Invalid alignment')
+    padval = text[-1]
+    for n in range(1, padval+1):
+        if text[-n] != padval:
+            raise Exception('Invalid padding')
+    return text[:-padval]
+
+
+print('Challenge 15')
+print(strip_padding(bytearray(b'ICE ICE BABY\x04\x04\x04\x04'), 16))
+print(strip_padding(pad_with_pkcs7(bytearray(b'YELLOW SUBMARINE'), 16),  16))
+
+
+# Challenge 16
+# CBC bitflipping attacks
