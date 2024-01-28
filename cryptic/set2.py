@@ -89,7 +89,7 @@ def aes_ecb_oracle(text):
 
 
 def aes_ecb_pad_attack(oracle):
-    # discover the block cipher size
+    # Discover the block cipher size
     blocksize = -1
     base = len(oracle(b''))
     for i in range(128):
@@ -99,24 +99,79 @@ def aes_ecb_pad_attack(oracle):
             blocksize = new - base
             break
 
-    # check if ciphertext is really ecb encrypted
+    # Discover attacker controlled offset caused by random prefix. For that, we
+    # find first repeated block controlled by us. This allows us to deduce the
+    # alignment of our input
+    def find_offset(oracle):
+        for k in range(2 * blocksize, 3 * blocksize):
+            enc = oracle(k * b'A')
+            prev = enc[0:blocksize]
+            for i in range(blocksize, len(enc), blocksize):
+                block = enc[i:i+blocksize]
+                if block == prev:
+                    return 2 * blocksize - k + (i - blocksize)
+                prev = block
+        raise Exception('could not determine input alignment')
+
+    goff = find_offset(oracle)
+    align = goff % blocksize
+    # round to next blocksize
+    goff = -goff % blocksize + goff
+
+    # Check if ciphertext is really ecb encrypted
     if not aes_detect_ecb_block_mode(oracle):
         raise Exception('oracle does not seem to use ECB mode')
 
+    # Let one byte from the unknown data shift into our encrypted block. Then,
+    # bruteforce all 256 possibilities by matching encrypted blocks.
+    # Afterwards, use the decoded byte to attack the following byte.
     shift = bytearray(b'A' * blocksize)
-    for off in range(0, base, 16):
-        for k in range(16):
+    for off in range(0, base, blocksize):
+        for k in range(blocksize):
+            if align > 0:
+                pad = b'X' * (blocksize - align)
+            else:
+                pad = b''
             feed = b'A' * (blocksize - 1 - k)
-            expected = oracle(feed)[off+0:off+blocksize]
-            for i in range(256):
-                plaintext = shift[off+k+1:off+k+blocksize] + i.to_bytes(1, 'big')
-                if oracle(plaintext)[0:blocksize] == expected:
-                    shift += i.to_bytes(1, 'big')
+            expected = oracle(pad + feed)[goff+off:goff+off+blocksize]
+            for char in range(256):
+                plaintext = (pad + shift[off+k+1:off+k+blocksize] +
+                             char.to_bytes(1, 'big'))
+                if oracle(plaintext)[goff:goff+blocksize] == expected:
+                    shift += char.to_bytes(1, 'big')
                     break
     return shift[blocksize:], blocksize
 
 
 print('Challenge 12')
 dec, blocksize = aes_ecb_pad_attack(aes_ecb_oracle)
+print('blocksize =', blocksize)
+print('dec =', dec)
+
+
+# Challenge 13
+# ECB cut-and-pastte
+
+# Challenge 14
+# Byte-at-a-time ECB decryption (Harder)
+
+random_prefix = secrets.token_bytes(secrets.randbelow(128))
+
+
+def aes_ecb_oracle_harder(text):
+    """aes128_ecb_encrypt(random-prefix || text || target-bytes, global-key)"""
+    unknown = (b"Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg"
+               b"aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq"
+               b"dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg"
+               b"YnkK")
+
+    return aes_ecb_encrypt(
+        pad_with_pkcs7(
+            bytearray(random_prefix + text + base64.b64decode(unknown)), 16),
+        global_key)
+
+
+print('Challenge 14')
+dec, blocksize = aes_ecb_pad_attack(aes_ecb_oracle_harder)
 print('blocksize =', blocksize)
 print('dec =', dec)
