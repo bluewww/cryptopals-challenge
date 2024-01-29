@@ -231,7 +231,7 @@ def aes_ecb_pad_attack(oracle):
     return shift[blocksize:], blocksize
 
 
-def pad_with_pkcs7(ba, align):
+def pkcs7_pad_with(ba, align):
     diff = -len(ba) % align
     if diff:
         ba.extend(diff.to_bytes(1, 'big') * diff)

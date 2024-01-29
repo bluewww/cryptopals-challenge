@@ -10,11 +10,11 @@ import secrets
 from Crypto.Cipher import AES
 
 from basic import (aes_cbc_decrypt, aes_cbc_encrypt, aes_detect_ecb_block_mode,
-                   aes_ecb_encrypt, aes_ecb_pad_attack, pad_with_pkcs7,
-                   strip_padding)
+                   aes_ecb_encrypt, aes_ecb_pad_attack, pkcs7_pad_with,
+                   pkcs7_strip_padding)
 
 block = b"YELLOW SUBMARINE"
-print(pad_with_pkcs7(bytearray(block), 20))
+print(pkcs7_pad_with(bytearray(block), 20))
 
 
 # Challenge 10
@@ -48,11 +48,11 @@ def encryption_oracle(text):
     text = bytearray(secrets.token_bytes(cnt0) + text + secrets.token_bytes(cnt1))
     if secrets.randbelow(2) == 1:
         print('CBC')
-        return aes_cbc_encrypt(pad_with_pkcs7(text, 16), random_key,
+        return aes_cbc_encrypt(pkcs7_pad_with(text, 16), random_key,
                                secrets.token_bytes(16))
     else:
         print('ECB')
-        return aes_ecb_encrypt(pad_with_pkcs7(text, 16), random_key)
+        return aes_ecb_encrypt(pkcs7_pad_with(text, 16), random_key)
 
 
 print('Challenge 11')
@@ -78,7 +78,7 @@ def aes_ecb_oracle(text):
                b"YnkK")
 
     return aes_ecb_encrypt(
-        pad_with_pkcs7(bytearray(text + base64.b64decode(unknown)), 16),
+        pkcs7_pad_with(bytearray(text + base64.b64decode(unknown)), 16),
         global_key)
 
 
@@ -105,7 +105,7 @@ def aes_ecb_oracle_harder(text):
                b"YnkK")
 
     return aes_ecb_encrypt(
-        pad_with_pkcs7(
+        pkcs7_pad_with(
             bytearray(random_prefix + text + base64.b64decode(unknown)), 16),
         global_key)
 
@@ -121,8 +121,9 @@ print('dec =', dec)
 
 
 print('Challenge 15')
-print(strip_padding(bytearray(b'ICE ICE BABY\x04\x04\x04\x04'), 16))
-print(strip_padding(pad_with_pkcs7(bytearray(b'YELLOW SUBMARINE'), 16),  16))
+print(pkcs7_strip_padding(bytearray(b'ICE ICE BABY\x04\x04\x04\x04'), 16))
+print(pkcs7_strip_padding(pkcs7_pad_with(bytearray(b'YELLOW SUBMARINE'), 16),
+                          16))
 
 
 # Challenge 16

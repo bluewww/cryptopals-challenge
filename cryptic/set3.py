@@ -6,7 +6,7 @@
 
 import secrets
 
-from basic import (aes_cbc_decrypt, aes_cbc_encrypt, pad_with_pkcs7,
+from basic import (aes_cbc_decrypt, aes_cbc_encrypt, pkcs7_pad_with,
                    pkcs7_is_valid_padding)
 
 global_key = secrets.token_bytes(16)
@@ -25,7 +25,7 @@ MDAwMDA3SSdtIG9uIGEgcm9sbCwgaXQncyB0aW1lIHRvIGdvIHNvbG8=
 MDAwMDA4b2xsaW4nIGluIG15IGZpdmUgcG9pbnQgb2g=
 MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93""".split(b'\n')
     return aes_cbc_encrypt(
-        pad_with_pkcs7(bytearray(pool[secrets.randbelow(10)]), 16),
+        pkcs7_pad_with(bytearray(pool[secrets.randbelow(10)]), 16),
         global_key, global_iv), global_iv
 
 
