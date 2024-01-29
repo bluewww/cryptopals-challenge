@@ -29,11 +29,10 @@ MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93""".split(b'\n')
         global_key, global_iv), global_iv
 
 
-def padding_oracle():
-    ciphertext, iv = aes_enc_random()
+def aes_dec_padding_oracle(ciphertext, iv):
     plaintext = aes_cbc_decrypt(ciphertext, global_key, iv)
     return pkcs7_is_valid_padding(plaintext, 16)
 
 
 print(aes_enc_random())
-print(padding_oracle())
+print(aes_dec_padding_oracle(*aes_enc_random()))
