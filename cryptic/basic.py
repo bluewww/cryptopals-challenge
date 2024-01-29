@@ -231,7 +231,26 @@ def aes_ecb_pad_attack(oracle):
     return shift[blocksize:], blocksize
 
 
-def strip_padding(text, align):
+def pad_with_pkcs7(ba, align):
+    diff = -len(ba) % align
+    if diff:
+        ba.extend(diff.to_bytes(1, 'big') * diff)
+    else:
+        ba.extend(align.to_bytes(1, 'big') * align)
+    return ba
+
+
+def pkcs7_is_valid_padding(text, align):
+    if len(text) % align != 0:
+        return False
+    padval = text[-1]
+    for n in range(1, padval+1):
+        if text[-n] != padval:
+            return False
+    return True
+
+
+def pkcs7_strip_padding(text, align):
     if len(text) % align != 0:
         raise Exception('Invalid alignment')
     padval = text[-1]

@@ -10,17 +10,8 @@ import secrets
 from Crypto.Cipher import AES
 
 from basic import (aes_cbc_decrypt, aes_cbc_encrypt, aes_detect_ecb_block_mode,
-                   aes_ecb_encrypt, aes_ecb_pad_attack, strip_padding)
-
-
-def pad_with_pkcs7(ba, align):
-    diff = -len(ba) % align
-    if diff:
-        ba.extend(diff.to_bytes(1, 'big') * diff)
-    else:
-        ba.extend(align.to_bytes(1, 'big') * align)
-    return ba
-
+                   aes_ecb_encrypt, aes_ecb_pad_attack, pad_with_pkcs7,
+                   strip_padding)
 
 block = b"YELLOW SUBMARINE"
 print(pad_with_pkcs7(bytearray(block), 20))
