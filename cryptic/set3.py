@@ -2,9 +2,11 @@
 # Robert Balas <balasr@iis.ee.ethz.ch>
 
 import secrets
+import itertools
 
 from basic import (aes_cbc_decrypt, aes_cbc_encrypt, pkcs7_pad_with,
-                   pkcs7_is_valid_padding, bxor, pkcs7_strip_padding)
+                   pkcs7_is_valid_padding, bxor, pkcs7_strip_padding,
+                   aes_ecb_encrypt)
 
 # Challenge 17
 # The CBC padding oracle
@@ -81,6 +83,47 @@ def aes_cbc_padding_attack(oracle, ciphertext, iv):
     return plaintext
 
 
+print('Challenge 17')
 dec = aes_cbc_padding_attack(aes_dec_padding_oracle, *aes_enc_random())
 assert pkcs7_strip_padding(dec, 16) in pool
 print(dec)
+
+
+# Challenge 18
+# Implement CTR, the stream cipher mode
+ctr_plaintext = b'L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ=='
+ctr_key = b'YELLOW SUBMARINE'
+ctr_nonce = (0).to_bytes(8, 'little')
+
+
+def aes_ctr_block_enc(key, fmt):
+    return aes_ecb_encrypt(fmt, key)
+
+
+def aes_ctr_enc(text, key, nonce):
+    if (len(nonce)) != 8:
+        raise ValueError('nonce is not 8 bytes long')
+
+    keystream = (aes_ctr_block_enc(key, nonce + bcount.to_bytes(8, 'little'))
+                 for bcount in itertools.count())
+    blocks = (text[i:i+16] for i in range(0, len(text), 16))
+
+    ciphertext = bytearray()
+    for block, key in zip(blocks, keystream):
+        ciphertext += bxor(block, key)
+
+    return ciphertext
+
+
+def aes_ctr_dec(text, key, nonce):
+    return aes_ctr_enc(text, key, nonce)
+
+
+aes_ctr_block_enc(ctr_key,
+                  b'\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00')
+
+enc = aes_ctr_enc(ctr_plaintext, ctr_key, ctr_nonce)
+dec = aes_ctr_dec(enc, ctr_key, ctr_nonce)
+print('Challenge 18')
+print('ciphertext =', enc)
+print('plaintext =', dec)
