@@ -7,7 +7,7 @@ from collections import Counter
 from Crypto.Cipher import AES
 
 from basic import (ascii_letter_bytes, best_plaintext, best_plaintexts_sorted,
-                   best_xor_key, bxor, ceildiv, keysize_heuristic,
+                   xor_single_key_attack, bxor, ceildiv, keysize_heuristic,
                    transpose_text)
 
 # Challenge 1
@@ -91,7 +91,7 @@ with open('data/6.txt', 'rb') as f:
     print('best keysize =', best_keysize)
     key = []
     for text in transpose_text(ciphertext, best_keysize):
-        dist, single_key = best_xor_key(text)
+        dist, single_key = xor_single_key_attack(text)
         key.append(single_key)
     key = bytearray(key)
     print('key =', key)

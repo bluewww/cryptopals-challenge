@@ -86,7 +86,7 @@ def best_plaintexts_sorted(plaintexts):
     return sorted(variations, key=sortkey)
 
 
-def best_xor_key(ciphertext):
+def xor_single_key_attack(ciphertext):
     keyspace = [x.to_bytes(1, 'big') for x in range(256)]
     candidates = [bxor(ciphertext, key * len(ciphertext))
                   for key in keyspace]
