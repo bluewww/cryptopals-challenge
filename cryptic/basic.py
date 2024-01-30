@@ -237,11 +237,8 @@ def aes_ecb_pad_attack(oracle):
 
 
 def pkcs7_pad_with(ba, align):
-    diff = -len(ba) % align
-    if diff:
-        ba.extend(diff.to_bytes(1, 'big') * diff)
-    else:
-        ba.extend(align.to_bytes(1, 'big') * align)
+    diff = align - (len(ba) % align)
+    ba.extend(diff.to_bytes(1, 'big') * diff)
     return ba
 
 
