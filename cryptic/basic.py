@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Robert Balas <balasr@iis.ee.ethz.ch>
+
 import itertools
 import string
 from collections import Counter
@@ -177,15 +178,19 @@ def aes_detect_ecb_block_mode(oracle):
 
 
 def aes_ecb_pad_attack(oracle):
+    MAX_BS = 128
+
     # Discover the block cipher size
-    blocksize = -1
-    base = len(oracle(b''))
-    for i in range(128):
-        feed = b'A' * i
-        new = len(oracle(feed))
-        if new != base:
-            blocksize = new - base
-            break
+    def find_blocksize(oracle):
+        base = len(oracle(b''))
+        for i in range(MAX_BS):
+            feed = b'A' * i
+            new = len(oracle(feed))
+            if new != base:
+                return new - base
+        raise Exception('exceeded maximum allowed block size of', MAX_BS)
+
+    blocksize = find_blocksize(oracle)
 
     # Discover attacker controlled offset caused by random prefix. For that, we
     # find first repeated block controlled by us. This allows us to deduce the
@@ -214,7 +219,7 @@ def aes_ecb_pad_attack(oracle):
     # bruteforce all 256 possibilities by matching encrypted blocks.
     # Afterwards, use the decoded byte to attack the following byte.
     shift = bytearray(b'A' * blocksize)
-    for off in range(0, base, blocksize):
+    for off in range(0, len(oracle(b'')), blocksize):
         for k in range(blocksize):
             if align > 0:
                 pad = b'X' * (blocksize - align)
