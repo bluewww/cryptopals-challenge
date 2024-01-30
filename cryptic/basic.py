@@ -244,6 +244,8 @@ def pkcs7_is_valid_padding(text, align):
     if len(text) % align != 0:
         return False
     padval = text[-1]
+    if padval == 0:
+        return False
     for n in range(1, padval+1):
         if text[-n] != padval:
             return False
@@ -254,6 +256,8 @@ def pkcs7_strip_padding(text, align):
     if len(text) % align != 0:
         raise Exception('Invalid alignment')
     padval = text[-1]
+    if padval == 0:
+        raise Exception('Invalid padding')
     for n in range(1, padval+1):
         if text[-n] != padval:
             raise Exception('Invalid padding')
