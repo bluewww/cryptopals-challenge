@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: MIT
 # Robert Balas <balasr@iis.ee.ethz.ch>
 
-import secrets
-import itertools
 import base64
+import itertools
+import secrets
 
-from basic import (aes_cbc_decrypt, aes_cbc_encrypt, pkcs7_pad_with,
-                   pkcs7_is_valid_padding, bxor, pkcs7_strip_padding,
-                   aes_ecb_encrypt, aes_ecb_decrypt)
+from basic import (aes_cbc_decrypt, aes_cbc_encrypt, aes_ecb_encrypt, bxor,
+                   pkcs7_is_valid_padding, pkcs7_pad_with, pkcs7_strip_padding,
+                   xor_single_key_attack)
 
 # Challenge 17
 # The CBC padding oracle
@@ -119,3 +119,84 @@ print('Challenge 18')
 enc = aes_ctr_enc(ctr_plaintext, ctr_key, ctr_nonce)
 print(ctr_plaintext)
 print('ciphertext =', enc)
+
+
+# Challenge 19
+# Break fixed-nonce CTR mode using substitutions
+
+aes_key = secrets.token_bytes(16)
+nonce = (0).to_bytes(8, 'little')
+problem = map(base64.b64decode, b"""SSBoYXZlIG1ldCB0aGVtIGF0IGNsb3NlIG9mIGRheQ==
+Q29taW5nIHdpdGggdml2aWQgZmFjZXM=
+RnJvbSBjb3VudGVyIG9yIGRlc2sgYW1vbmcgZ3JleQ==
+RWlnaHRlZW50aC1jZW50dXJ5IGhvdXNlcy4=
+SSBoYXZlIHBhc3NlZCB3aXRoIGEgbm9kIG9mIHRoZSBoZWFk
+T3IgcG9saXRlIG1lYW5pbmdsZXNzIHdvcmRzLA==
+T3IgaGF2ZSBsaW5nZXJlZCBhd2hpbGUgYW5kIHNhaWQ=
+UG9saXRlIG1lYW5pbmdsZXNzIHdvcmRzLA==
+QW5kIHRob3VnaHQgYmVmb3JlIEkgaGFkIGRvbmU=
+T2YgYSBtb2NraW5nIHRhbGUgb3IgYSBnaWJl
+VG8gcGxlYXNlIGEgY29tcGFuaW9u
+QXJvdW5kIHRoZSBmaXJlIGF0IHRoZSBjbHViLA==
+QmVpbmcgY2VydGFpbiB0aGF0IHRoZXkgYW5kIEk=
+QnV0IGxpdmVkIHdoZXJlIG1vdGxleSBpcyB3b3JuOg==
+QWxsIGNoYW5nZWQsIGNoYW5nZWQgdXR0ZXJseTo=
+QSB0ZXJyaWJsZSBiZWF1dHkgaXMgYm9ybi4=
+VGhhdCB3b21hbidzIGRheXMgd2VyZSBzcGVudA==
+SW4gaWdub3JhbnQgZ29vZCB3aWxsLA==
+SGVyIG5pZ2h0cyBpbiBhcmd1bWVudA==
+VW50aWwgaGVyIHZvaWNlIGdyZXcgc2hyaWxsLg==
+V2hhdCB2b2ljZSBtb3JlIHN3ZWV0IHRoYW4gaGVycw==
+V2hlbiB5b3VuZyBhbmQgYmVhdXRpZnVsLA==
+U2hlIHJvZGUgdG8gaGFycmllcnM/
+VGhpcyBtYW4gaGFkIGtlcHQgYSBzY2hvb2w=
+QW5kIHJvZGUgb3VyIHdpbmdlZCBob3JzZS4=
+VGhpcyBvdGhlciBoaXMgaGVscGVyIGFuZCBmcmllbmQ=
+V2FzIGNvbWluZyBpbnRvIGhpcyBmb3JjZTs=
+SGUgbWlnaHQgaGF2ZSB3b24gZmFtZSBpbiB0aGUgZW5kLA==
+U28gc2Vuc2l0aXZlIGhpcyBuYXR1cmUgc2VlbWVkLA==
+U28gZGFyaW5nIGFuZCBzd2VldCBoaXMgdGhvdWdodC4=
+VGhpcyBvdGhlciBtYW4gSSBoYWQgZHJlYW1lZA==
+QSBkcnVua2VuLCB2YWluLWdsb3Jpb3VzIGxvdXQu
+SGUgaGFkIGRvbmUgbW9zdCBiaXR0ZXIgd3Jvbmc=
+VG8gc29tZSB3aG8gYXJlIG5lYXIgbXkgaGVhcnQs
+WWV0IEkgbnVtYmVyIGhpbSBpbiB0aGUgc29uZzs=
+SGUsIHRvbywgaGFzIHJlc2lnbmVkIGhpcyBwYXJ0
+SW4gdGhlIGNhc3VhbCBjb21lZHk7
+SGUsIHRvbywgaGFzIGJlZW4gY2hhbmdlZCBpbiBoaXMgdHVybiw=
+VHJhbnNmb3JtZWQgdXR0ZXJseTo=
+QSB0ZXJyaWJsZSBiZWF1dHkgaXMgYm9ybi4=""".split(b'\n'))
+
+ciphertexts = list(map(lambda pt: aes_ctr_enc(pt, aes_key, nonce), problem))
+# attack all ciphertexts "horizontally" treating them as single xor encryption
+# (works since they alls hare the same keystream)
+keystream = bytearray(0)
+for row in zip(*ciphertexts):
+    dist, key = xor_single_key_attack(bytearray(row))
+    keystream += bytes([key])
+print('Challenge 19')
+print('keystream =', keystream)
+
+for ct in ciphertexts:
+    print(bxor(ct, keystream))
+
+
+# Challenge 20
+# Break fixed-nonce CTR statistically
+# same attack
+
+with open('data/20.txt', 'rb') as f:
+    aes_key = secrets.token_bytes(16)
+    nonce = (0).to_bytes(8, 'little')
+    plaintexts = [base64.b64decode(bytearray(line.strip())) for line in f]
+    ciphertexts = list(map(lambda pt: aes_ctr_enc(pt, aes_key, nonce), plaintexts))
+
+    keystream = bytearray(0)
+    for row in zip(*ciphertexts):
+        dist, key = xor_single_key_attack(bytearray(row))
+        keystream += bytes([key])
+
+    print('Challenge 20')
+    print('keystream =', keystream)
+    for ct in ciphertexts:
+        print(bxor(ct, keystream))
