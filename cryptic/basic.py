@@ -162,8 +162,7 @@ def aes_cbc_decrypt(text, key, iv):
 
 
 def aes_detect_ecb_block_mode(oracle):
-    test = 48 * b'X'
-    enc = oracle(bytearray(test))
+    enc = oracle(bytearray(48 * b'X'))
     for offset in range(16):
         seen = set()
         for block in (enc[offset+i:offset+i+16]

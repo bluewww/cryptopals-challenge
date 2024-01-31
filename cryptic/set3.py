@@ -32,7 +32,6 @@ def aes_enc_random():
 
 def aes_dec_padding_oracle(ciphertext, iv):
     plaintext = aes_cbc_decrypt(ciphertext, global_key, iv)
-    # print('dec =', plaintext)
     return pkcs7_is_valid_padding(plaintext, 16)
 
 
