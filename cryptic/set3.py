@@ -2,10 +2,9 @@
 # Robert Balas <balasr@iis.ee.ethz.ch>
 
 import base64
-import itertools
 import secrets
 
-from basic import (aes_cbc_decrypt, aes_cbc_encrypt, aes_ecb_encrypt, bxor,
+from basic import (aes_cbc_decrypt, aes_cbc_encrypt, aes_ctr_enc, bxor,
                    pkcs7_is_valid_padding, pkcs7_pad_with, pkcs7_strip_padding,
                    xor_single_key_attack)
 
@@ -95,25 +94,6 @@ print(dec)
 ctr_plaintext = base64.b64decode(b'L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==')
 ctr_key = b'YELLOW SUBMARINE'
 ctr_nonce = (0).to_bytes(8, 'little')
-
-
-def aes_ctr_enc(text, key, nonce):
-    if (len(nonce)) != 8:
-        raise ValueError('nonce is not 8 bytes long')
-
-    keystream = (aes_ecb_encrypt(nonce + bcount.to_bytes(8, 'little'), key)
-                 for bcount in itertools.count())
-    blocks = (text[i:i+16] for i in range(0, len(text), 16))
-
-    ciphertext = bytearray()
-    for b, k in zip(blocks, keystream):
-        ciphertext += bxor(b, k)
-    return ciphertext
-
-
-def aes_ctr_dec(text, key, nonce):
-    return aes_ctr_enc(text, key, nonce)
-
 
 print('Challenge 18')
 enc = aes_ctr_enc(ctr_plaintext, ctr_key, ctr_nonce)

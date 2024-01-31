@@ -264,3 +264,21 @@ def pkcs7_strip_padding(text, align):
         if text[-n] != padval:
             raise Exception('Invalid padding')
     return text[:-padval]
+
+
+def aes_ctr_enc(text, key, nonce):
+    if (len(nonce)) != 8:
+        raise ValueError('nonce is not 8 bytes long')
+
+    keystream = (aes_ecb_encrypt(nonce + bcount.to_bytes(8, 'little'), key)
+                 for bcount in itertools.count())
+    blocks = (text[i:i+16] for i in range(0, len(text), 16))
+
+    ciphertext = bytearray()
+    for b, k in zip(blocks, keystream):
+        ciphertext += bxor(b, k)
+    return ciphertext
+
+
+def aes_ctr_dec(text, key, nonce):
+    return aes_ctr_enc(text, key, nonce)
